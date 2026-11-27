@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Lumen - New Page</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-light">
+
+    <div class="lumen-container">
+        <!-- Orologio -->
+        <div id="lumen-clock">00:00:00</div>
+
+        <!-- Saluto personalizzato -->
+        <div id="lumen-greeting">Buongiorno! ☀️</div>
+
+        <!-- Barra di ricerca -->
+        <div id="search-section">
+            <div id="lumen-search-bar">
+                <div id="search-selectors">
+                    <button class="search-selector-btn active" data-engine="google">Google</button>
+                    <button class="search-selector-btn" data-engine="bing">Bing</button>
+                    <button class="search-selector-btn" data-engine="duckduckgo">DuckDuckGo</button>
+                    <button class="search-selector-btn" data-engine="brave">Brave</button>
+                </div>
+                <div id="search-input-wrap">
+                    <div id="lumen-input-highlight" aria-hidden="true"></div>
+                    <input type="text" id="lumen-search-input" placeholder="Cerca nel web..." autocomplete="off" spellcheck="false">
+                </div>
+                <button id="lumen-search-submit" title="Cerca">🔍</button>
+            </div>
+            <div id="gapps-hint" class="hidden">📱 Scrivi il nome di un'app Google (es. <b>gmail</b>, <b>drive</b>, <b>youtube</b>, <b>maps</b>…) e premi Invio — 20 app disponibili</div>
+        </div>
+
+        <!-- Sezione Siti Preferiti -->
+        <div class="lumen-section-title">I tuoi preferiti</div>
+        <div id="lumen-favorites-grid">
+            <!-- I preferiti verranno generati dinamicamente qui -->
+        </div>
+
+        <!-- Pulsante Impostazioni -->
+        <button id="lumen-toggle-settings" title="Impostazioni">⚙️ Personalizza</button>
+
+        <!-- Pannello Impostazioni a scomparsa / modale -->
+        <div id="lumen-settings-modal" class="hidden">
+            <div class="modal-content">
+                <h3>✨ Impostazioni Lumen</h3>
+
+                <label for="user-name">Il tuo Nome:</label>
+                <input type="text" id="user-name" placeholder="Es. Marco">
+
+                <label>Tema Prediletto:</label>
+                <div class="theme-preview">
+                    <button id="theme-btn-light" class="theme-btn active" data-theme="light">Chiaro</button>
+                    <button id="theme-btn-dark" class="theme-btn" data-theme="dark">Scuro</button>
+                    <button id="theme-btn-deep-blue" class="theme-btn" data-theme="deep-blue">Blu</button>
+                </div>
+
+                <label for="favorite-sites">Siti Preferiti (Nome | URL):</label>
+                <textarea id="favorite-sites" rows="3" placeholder="Google | https://google.com"></textarea>
+
+                <div class="modal-buttons">
+                    <button id="save-settings">Salva</button>
+                    <button id="close-settings">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifiche -->
+    <div id="lumen-toast" role="status"></div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
