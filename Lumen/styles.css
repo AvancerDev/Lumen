@@ -1,0 +1,380 @@
+/* --- Stile Base & Temi --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    overflow: hidden;
+}
+
+.lumen-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+    padding: 20px;
+}
+
+/* --- Temi --- */
+body.theme-light {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #2c3e50;
+}
+body.theme-dark {
+    background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+    color: #f1f1f1;
+}
+body.theme-deep-blue {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 0%, #2c5364 100%);
+    color: #e0f7fc;
+}
+
+/* --- Orologio --- */
+#lumen-clock {
+font-size: 4.5rem;
+font-weight: 800;
+letter-spacing: 2px;
+margin-bottom: 5px;
+text-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+/* --- Saluto --- */
+#lumen-greeting {
+font-size: 1.6rem;
+font-weight: 500;
+margin-bottom: 30px;
+opacity: 0.9;
+}
+
+/* --- Sezione Ricerca (barra + suggerimento gapps) --- */
+#search-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 40px;
+}
+
+/* --- Barra di Ricerca --- */
+#lumen-search-bar {
+display: flex;
+align-items: center;
+background: rgba(255, 255, 255, 0.85);
+backdrop-filter: blur(10px);
+border-radius: 50px;
+padding: 8px 12px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+width: 100%;
+max-width: 650px;
+margin-bottom: 0;
+transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#lumen-search-bar:focus-within {
+transform: translateY(-2px);
+box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+background: rgba(255, 255, 255, 0.95);
+}
+
+/* Barra evidenziata quando il comando gapps è attivo */
+#lumen-search-bar.gapps-active {
+background: rgba(233, 242, 255, 0.95);
+box-shadow: 0 10px 30px rgba(0, 123, 255, 0.30);
+}
+
+#search-selectors {
+display: flex;
+flex-shrink: 0;
+gap: 4px;
+background: rgba(0, 0, 0, 0.05);
+padding: 4px;
+border-radius: 30px;
+}
+
+.search-selector-btn {
+    background: none;
+    border: none;
+    padding: 6px 9px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #555;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.search-selector-btn.active {
+    background: #007bff;
+    color: white;
+}
+
+/* Input con specchio per evidenziare il testo del comando */
+#search-input-wrap {
+    position: relative;
+    flex-grow: 1;
+    min-width: 0;
+    display: flex;
+}
+
+#lumen-input-highlight {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    color: #333;
+    white-space: pre;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.gapps-keyword {
+    background: rgba(0, 123, 255, 0.28);
+    color: #0056b3;
+    border-radius: 4px;
+}
+
+#lumen-search-input {
+position: relative;
+z-index: 1;
+flex-grow: 1;
+width: 100%;
+min-width: 0;
+border: none;
+outline: none;
+font-size: 1.05rem;
+line-height: 1.4;
+padding: 0 15px;
+background: transparent;
+color: transparent;
+caret-color: #333;
+}
+
+#lumen-search-input::placeholder {
+    color: #8a93a2;
+}
+
+#lumen-search-submit {
+background: #007bff;
+color: white;
+border: none;
+border-radius: 50%;
+width: 40px;
+height: 40px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: background 0.2s;
+flex-shrink: 0;
+}
+
+#lumen-search-submit:hover {
+background: #0056b3;
+}
+
+/* --- Suggerimento sotto la barra quando gapps è attivo --- */
+#gapps-hint {
+    width: 100%;
+    max-width: 650px;
+    margin-top: 10px;
+    padding: 7px 16px;
+    text-align: center;
+    font-size: 0.82rem;
+    border-radius: 30px;
+    background: rgba(127, 127, 127, 0.18);
+    opacity: 0.95;
+}
+
+#gapps-hint.hidden {
+    display: none;
+}
+
+/* --- Toast notifiche --- */
+#lumen-toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(20, 24, 31, 0.92);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 2000;
+    max-width: 80vw;
+    text-align: center;
+}
+
+#lumen-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --- Griglia Preferiti --- */
+.lumen-section-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    opacity: 0.7;
+}
+
+#lumen-favorites-grid {
+display: flex;
+gap: 15px;
+flex-wrap: wrap;
+justify-content: center;
+max-width: 700px;
+margin-bottom: 30px;
+}
+
+.lumen-tile {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 12px 20px;
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.lumen-tile:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+/* --- Pulsante Impostazioni e Modale --- */
+#lumen-toggle-settings {
+position: fixed;
+bottom: 25px;
+right: 25px;
+background: rgba(0, 0, 0, 0.2);
+color: inherit;
+border: 1px solid rgba(255, 255, 255, 0.2);
+padding: 10px 18px;
+border-radius: 30px;
+cursor: pointer;
+backdrop-filter: blur(5px);
+transition: background 0.2s;
+}
+
+#lumen-toggle-settings:hover {
+background: rgba(0, 0, 0, 0.4);
+}
+
+#lumen-settings-modal {
+position: fixed;
+top: 0;
+left: 0;
+width: 100vw;
+height: 100vh;
+background: rgba(0, 0, 0, 0.6);
+backdrop-filter: blur(5px);
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 1000;
+}
+
+#lumen-settings-modal.hidden {
+display: none;
+}
+
+.modal-content {
+    background: #ffffff;
+    color: #333;
+    padding: 30px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+}
+
+.modal-content label {
+    display: block;
+    margin-top: 15px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.modal-content input[type="text"],
+.modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.theme-preview {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.theme-btn {
+    flex: 1;
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: #f1f1f1;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.theme-btn.active {
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.modal-buttons button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#save-settings {
+background: #007bff;
+color: white;
+}
+
+#close-settings {
+background: #e9ecef;
+}
