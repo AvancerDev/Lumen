@@ -259,7 +259,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const COMMAND_HIGHLIGHT_RE = /^(\/?gapps|\/yt)(?=\s|$)/i;
 
     function syncHighlightScroll() {
-        highlightEl.style.transform = `translateX(${-searchInput.scrollLeft}px)`;
+        // Scorre il contenuto dello specchio SENZA trasformare la scatola:
+        // un translateX sposterebbe anche il ritaglio (overflow) e farebbe
+        // scivolare il testo sopra i pulsanti dei motori di ricerca.
+        highlightEl.scrollLeft = searchInput.scrollLeft;
     }
 
     async function updateInputHighlight() {
