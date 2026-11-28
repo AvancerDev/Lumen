@@ -7,6 +7,7 @@ function navigateTo(url) {
 const GOOGLE_APPS = [
     { name: 'Gmail', url: 'https://mail.google.com/', aliases: ['mail', 'googlemail', 'posta', 'email', 'e-mail'] },
     { name: 'YouTube', url: 'https://www.youtube.com/', aliases: ['yt', 'video', 'videos'] },
+    { name: 'Gemini', url: 'https://gemini.google.com/', aliases: ['bard', 'googlegemini'] },
     { name: 'Drive', url: 'https://drive.google.com/', aliases: ['gdrive', 'googledrive'] },
     { name: 'Maps', url: 'https://maps.google.com/', aliases: ['gmaps', 'googlemaps', 'mappe'] },
     { name: 'Photos', url: 'https://photos.google.com/', aliases: ['googlephotos', 'foto', 'fotos'] },
@@ -79,6 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const favoritesGrid = document.getElementById('lumen-favorites-grid');
     const highlightEl = document.getElementById('lumen-input-highlight');
     const gappsHint = document.getElementById('gapps-hint');
+    const gappsHintCount = document.getElementById('gapps-hint-count');
+    const gappsListPanel = document.getElementById('gapps-list-panel');
+    const gappsListTitle = document.getElementById('gapps-list-title');
+    const gappsListChips = document.getElementById('gapps-list-chips');
     const searchBar = document.getElementById('lumen-search-bar');
     const toastEl = document.getElementById('lumen-toast');
 
@@ -156,9 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Evidenziazione del comando gapps nella barra ---
-    // La parola "gapps" (senza slash) viene evidenziata mentre l'utente la scrive.
-    const GAPPS_HIGHLIGHT_RE = /^(\/?gapps)(?=\s|$)/i;
+    // --- Evidenziazione dei comandi gapps e /yt nella barra ---
+    // "gapps" (senza slash) e "/yt" vengono evidenziati mentre l'utente li scrive.
+    const COMMAND_HIGHLIGHT_RE = /^(\/?gapps|\/yt)(?=\s|$)/i;
 
     function syncHighlightScroll() {
         highlightEl.style.transform = `translateX(${-searchInput.scrollLeft}px)`;
@@ -166,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateInputHighlight() {
         const value = searchInput.value;
-        const match = value.match(GAPPS_HIGHLIGHT_RE);
+        const match = value.match(COMMAND_HIGHLIGHT_RE);
 
         highlightEl.textContent = '';
         if (match) {
@@ -181,13 +186,18 @@ document.addEventListener('DOMContentLoaded', () => {
         syncHighlightScroll();
 
         const active = !!match;
-        gappsHint.classList.toggle('hidden', !active);
         searchBar.classList.toggle('gapps-active', active);
+        // Il suggerimento gapps appare solo per il comando gapps
+        const gappsMode = active && /gapps/i.test(match[1]);
+        gappsHint.classList.toggle('hidden', !gappsMode);
+        // La lista si chiude non appena l'utente modifica il testo
+        gappsListPanel.classList.add('hidden');
     }
 
     searchInput.addEventListener('input', updateInputHighlight);
     searchInput.addEventListener('scroll', syncHighlightScroll);
     updateInputHighlight();
+    gappsHintCount.textContent = GOOGLE_APPS.length;
 
     // --- Toast di notifica ---
     let toastTimer = null;
@@ -196,6 +206,22 @@ document.addEventListener('DOMContentLoaded', () => {
         toastEl.classList.add('show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3500);
+    }
+
+    // --- Lista delle app Google (gapps --list) ---
+    function showGappsList() {
+        gappsListTitle.textContent = `App Google disponibili (${GOOGLE_APPS.length})`;
+        gappsListChips.innerHTML = '';
+        GOOGLE_APPS.forEach(app => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'gapps-chip';
+            chip.textContent = app.name;
+            chip.title = app.url;
+            chip.addEventListener('click', () => navigateTo(app.url));
+            gappsListChips.appendChild(chip);
+        });
+        gappsListPanel.classList.remove('hidden');
     }
 
     function performSearch() {
@@ -208,6 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const appRequest = query.slice(gappsMatch[0].length).trim();
             if (!appRequest) {
                 showToast('Scrivi il nome di un’app Google, es. “gapps gmail”');
+                return;
+            }
+            if (/^--list$/i.test(appRequest)) {
+                showGappsList();
                 return;
             }
             const app = findGoogleApp(appRequest);

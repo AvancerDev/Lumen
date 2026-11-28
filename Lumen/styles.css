@@ -203,6 +203,57 @@ background: #0056b3;
     display: none;
 }
 
+/* --- Pannello lista app (gapps --list) --- */
+#gapps-list-panel {
+    width: 100%;
+    max-width: 650px;
+    margin-top: 10px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+#gapps-list-panel.hidden {
+    display: none;
+}
+
+#gapps-list-title {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#gapps-list-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.gapps-chip {
+    border: 1px solid rgba(0, 123, 255, 0.20);
+    background: rgba(0, 123, 255, 0.10);
+    color: #0056b3;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gapps-chip:hover {
+    background: #007bff;
+    border-color: #007bff;
+    color: white;
+    transform: translateY(-1px);
+}
+
 /* --- Toast notifiche --- */
 #lumen-toast {
     position: fixed;
