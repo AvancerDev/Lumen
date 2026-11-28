@@ -61,6 +61,97 @@ function findGoogleApp(input) {
     return null;
 }
 
+// --- Bangs: catalogo locale (kagisearch/bangs, MIT) ---
+let bangsPromise = null;
+
+function ensureBangs() {
+    if (!bangsPromise) {
+        bangsPromise = (typeof fetch === 'function' ? fetch('bangs.json') : Promise.reject(new Error('fetch non disponibile')))
+            .then(res => res.json())
+            .then(list => {
+                const byTrigger = new Map();
+                for (const bang of list) {
+                    for (const trg of [bang.t, ...(bang.ts || [])]) {
+                        if (!byTrigger.has(trg)) byTrigger.set(trg, bang);
+                    }
+                }
+                return { list, byTrigger };
+            })
+            .catch(() => null);
+    }
+    return bangsPromise;
+}
+
+const BANG_DEFAULT_FLAGS = ['open_base_path', 'open_snap_domain', 'url_encode_placeholder', 'url_encode_space_to_plus'];
+
+// Risolve un bang in un URL: placeholder {{{s}}}, flag fmt, template relativi e regex $1/$2
+function resolveBangUrl(bang, rawQuery) {
+    const query = (rawQuery || '').trim();
+    const flags = new Set(Array.isArray(bang.fmt) ? bang.fmt : BANG_DEFAULT_FLAGS);
+
+    // Bang senza query: apri la home (flag open_snap_domain / open_base_path)
+    if (!query) {
+        if (flags.has('open_snap_domain') && bang.ad) return `https://${bang.ad}/`;
+        if (flags.has('open_base_path')) return `https://${bang.d}/`;
+    }
+
+    const encode = (value) => {
+        if (flags.has('url_encode_placeholder')) {
+            let out = encodeURIComponent(value);
+            if (flags.has('url_encode_space_to_plus')) out = out.replace(/%20/g, '+');
+            return out;
+        }
+        if (flags.has('url_encode_space_to_plus')) return value.replace(/ /g, '+');
+        return value;
+    };
+
+    let url;
+    if (bang.x) {
+        // Bang con regex: $1, $2... sono i gruppi catturati dalla query
+        const match = query.match(new RegExp(bang.x));
+        if (match) {
+            const groups = match.slice(1);
+            url = bang.u.replace(/\$(\d+)/g, (all, n) => encode(groups[Number(n) - 1] ?? ''));
+        } else {
+            url = bang.u.replace(/\$(\d+)/g, (all, n) => (n === '1' ? encode(query) : ''));
+        }
+    } else {
+        url = bang.u.split('{{{s}}}').join(encode(query));
+    }
+
+    // Template relativi (bangs interni Kagi): risolve sul dominio dichiarato
+    if (url.startsWith('/')) url = `https://${bang.d}${url}`;
+    return url;
+}
+
+// Primi N bang che combaciano con il token: esatto → prefisso trigger → nome sito
+function suggestBangs(cat, token, limit = 8) {
+    const t = token.toLowerCase();
+    const exact = [], prefixed = [], byName = [];
+    for (const [trg, bang] of cat.byTrigger) {
+        if (trg === t) exact.push({ trigger: trg, bang });
+        else if (trg.startsWith(t)) prefixed.push({ trigger: trg, bang });
+        else if (bang.s.toLowerCase().includes(t)) byName.push({ trigger: trg, bang });
+    }
+    const byLen = (a, b) => a.trigger.length - b.trigger.length || a.trigger.localeCompare(b.trigger);
+    prefixed.sort(byLen);
+    byName.sort(byLen);
+
+    const seen = new Set();
+    const out = [];
+    for (const item of [...exact, ...prefixed, ...byName]) {
+        if (seen.has(item.bang)) continue;
+        seen.add(item.bang);
+        out.push(item);
+        if (out.length >= limit) break;
+    }
+    return out;
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // Storage: chrome.storage dentro l'estensione, fallback per anteprima/apertura diretta
 const storageArea = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync)
     ? chrome.storage.sync
@@ -84,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gappsListPanel = document.getElementById('gapps-list-panel');
     const gappsListTitle = document.getElementById('gapps-list-title');
     const gappsListChips = document.getElementById('gapps-list-chips');
+    const bangHint = document.getElementById('bang-hint');
+    const bangSuggestions = document.getElementById('bang-suggestions');
     const searchBar = document.getElementById('lumen-search-bar');
     const toastEl = document.getElementById('lumen-toast');
 
@@ -169,29 +262,65 @@ document.addEventListener('DOMContentLoaded', () => {
         highlightEl.style.transform = `translateX(${-searchInput.scrollLeft}px)`;
     }
 
-    function updateInputHighlight() {
+    async function updateInputHighlight() {
         const value = searchInput.value;
-        const match = value.match(COMMAND_HIGHLIGHT_RE);
+        const cmdMatch = value.match(COMMAND_HIGHLIGHT_RE);
+        const bangMatch = value.match(/^!(\S*)(?=\s|$)/);
+        const keyword = cmdMatch ? cmdMatch[1] : (bangMatch ? bangMatch[0] : '');
 
         highlightEl.textContent = '';
-        if (match) {
-            const keyword = document.createElement('span');
-            keyword.className = 'gapps-keyword';
-            keyword.textContent = match[1];
-            highlightEl.appendChild(keyword);
-            highlightEl.appendChild(document.createTextNode(value.slice(match[1].length)));
+        if (keyword) {
+            const span = document.createElement('span');
+            span.className = 'gapps-keyword';
+            span.textContent = keyword;
+            highlightEl.appendChild(span);
+            highlightEl.appendChild(document.createTextNode(value.slice(keyword.length)));
         } else {
             highlightEl.textContent = value;
         }
         syncHighlightScroll();
 
-        const active = !!match;
+        const active = !!(cmdMatch || bangMatch);
         searchBar.classList.toggle('gapps-active', active);
+
         // Il suggerimento gapps appare solo per il comando gapps
-        const gappsMode = active && /gapps/i.test(match[1]);
+        const gappsMode = !!cmdMatch && /gapps/i.test(cmdMatch[1]);
         gappsHint.classList.toggle('hidden', !gappsMode);
-        // La lista si chiude non appena l'utente modifica il testo
+        // La lista gapps si chiude non appena l'utente modifica il testo
         gappsListPanel.classList.add('hidden');
+
+        // Stato bang: si nasconde tutto, poi si mostra il caso giusto
+        bangHint.classList.add('hidden');
+        bangSuggestions.classList.add('hidden');
+        if (!bangMatch) return;
+
+        const token = bangMatch[1].toLowerCase();
+        const cat = await ensureBangs();
+        if (searchInput.value !== value) return; // digitazione superata
+        if (!cat) {
+            bangHint.textContent = 'Catalogo bangs non disponibile.';
+            bangHint.classList.remove('hidden');
+            return;
+        }
+        if (!token) {
+            bangHint.innerHTML = `💡 Scrivi un bang — es. <b>!gh</b>, <b>!w</b>, <b>!yt</b> (${cat.byTrigger.size.toLocaleString('it-IT')} trigger disponibili)`;
+            bangHint.classList.remove('hidden');
+            return;
+        }
+        const typedQuery = /\s/.test(value.slice(bangMatch[0].length));
+        const exact = cat.byTrigger.get(token);
+        if (exact && typedQuery) {
+            bangHint.innerHTML = `🔍 <b>${escapeHtml(exact.s)}</b> — premi Invio per aprire`;
+            bangHint.classList.remove('hidden');
+            return;
+        }
+        const items = suggestBangs(cat, token, 8);
+        if (items.length) {
+            renderBangSuggestions(items);
+        } else {
+            bangHint.textContent = `Nessun bang per “!${token}” — prova un altro trigger`;
+            bangHint.classList.remove('hidden');
+        }
     }
 
     searchInput.addEventListener('input', updateInputHighlight);
@@ -224,7 +353,41 @@ document.addEventListener('DOMContentLoaded', () => {
         gappsListPanel.classList.remove('hidden');
     }
 
-    function performSearch() {
+    // --- Suggerimenti bang ---
+    function renderBangSuggestions(items) {
+        bangSuggestions.innerHTML = '';
+        for (const { trigger, bang } of items) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'bang-suggestion';
+
+            const trg = document.createElement('span');
+            trg.className = 'bang-sug-trigger';
+            trg.textContent = `!${trigger}`;
+
+            const site = document.createElement('span');
+            site.className = 'bang-sug-site';
+            site.textContent = bang.s;
+
+            const domain = document.createElement('span');
+            domain.className = 'bang-sug-domain';
+            domain.textContent = bang.d;
+
+            btn.append(trg, site, domain);
+            btn.addEventListener('click', () => executeBang(bang));
+            bangSuggestions.appendChild(btn);
+        }
+        bangSuggestions.classList.remove('hidden');
+    }
+
+    function executeBang(bang) {
+        const value = searchInput.value;
+        const m = value.match(/^!(\S*)(?:\s+|$)/);
+        const rest = m ? value.slice(m[0].length).trim() : '';
+        navigateTo(resolveBangUrl(bang, rest));
+    }
+
+    async function performSearch() {
         const query = searchInput.value.trim();
         if (!query) return;
 
@@ -255,6 +418,28 @@ document.addEventListener('DOMContentLoaded', () => {
             navigateTo(ytQuery
                 ? `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`
                 : 'https://www.youtube.com/');
+            return;
+        }
+
+        // Bangs: "!gh arena" — catalogo locale kagisearch/bangs
+        const bangMatch = query.match(/^!(\S*)(?:\s+|$)/);
+        if (bangMatch) {
+            const token = bangMatch[1].toLowerCase();
+            const rest = query.slice(bangMatch[0].length).trim();
+            const cat = await ensureBangs();
+            if (!cat) {
+                showToast('Catalogo bangs non disponibile.');
+                return;
+            }
+            const bang = cat.byTrigger.get(token);
+            if (bang) {
+                navigateTo(resolveBangUrl(bang, rest));
+            } else {
+                const near = suggestBangs(cat, token, 3);
+                showToast(near.length
+                    ? `Bang “!${token}” sconosciuto — forse: ${near.map(n => '!' + n.trigger).join(', ')}`
+                    : `Bang “!${token}” sconosciuto.`);
+            }
             return;
         }
 
